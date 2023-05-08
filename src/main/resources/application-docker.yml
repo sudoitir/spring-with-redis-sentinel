@@ -7,7 +7,7 @@ spring:
       sentinel:
         master: mymaster
         nodes:
-          - localhost:26379
-          - localhost:26380
-          - localhost:26381
+          - highly-available-redis-example-redis-sentinel-1
+          - highly-available-redis-example-redis-sentinel-2
+          - highly-available-redis-example-redis-sentinel-3
       timeout: 600ms
