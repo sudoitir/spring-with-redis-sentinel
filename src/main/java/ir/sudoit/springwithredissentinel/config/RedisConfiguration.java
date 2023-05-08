@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -24,15 +22,24 @@ public class RedisConfiguration {
     private final RedisProperties redisProperties;
 
     @Bean
-    protected LettuceConnectionFactory redisConnectionFactory() {
-        RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
+    public LettuceConnectionFactory lettuceConnectionFactory() {
+        final RedisSentinelConfiguration sentinelConfiguration = new RedisSentinelConfiguration()
                 .master(redisProperties.getSentinel().getMaster());
-        redisProperties.getSentinel().getNodes().forEach(s -> sentinelConfig.sentinel(s, redisProperties.getPort()));
-        sentinelConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
+        final var lettuceClientConfiguration = LettuceClientConfiguration.builder()
+                .readFrom(ReadFrom.ANY_REPLICA)
+                .build();
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .commandTimeout(redisProperties.getTimeout()).readFrom(ReadFrom.REPLICA_PREFERRED).build();
-        return new LettuceConnectionFactory(sentinelConfig, clientConfig);
+        redisProperties.getSentinel().getNodes().forEach(node -> {
+            final String[] sentinelNodes = node.split(":");
+            final String host = sentinelNodes[0];
+            final var port = Integer.parseInt(sentinelNodes[1]);
+
+            sentinelConfiguration.sentinel(host, port);
+        });
+
+        var connectionFactory = new LettuceConnectionFactory(sentinelConfiguration, lettuceClientConfiguration);
+        connectionFactory.setDatabase(redisProperties.getDatabase());
+        return connectionFactory;
     }
 
     @Bean
@@ -42,7 +49,7 @@ public class RedisConfiguration {
         redisTemplate.setHashKeySerializer(new GenericToStringSerializer<>(Object.class));
         redisTemplate.setHashValueSerializer(new JdkSerializationRedisSerializer());
         redisTemplate.setValueSerializer(new JdkSerializationRedisSerializer());
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setConnectionFactory(lettuceConnectionFactory());
         return redisTemplate;
     }
 
