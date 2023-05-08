@@ -1,0 +1,13 @@
+spring:
+  data:
+    redis:
+      port: 26379
+      host: localhost
+      password:
+      sentinel:
+        master: mymaster
+        nodes:
+          - localhost:26379
+          - localhost:26380
+          - localhost:26381
+      timeout: 600ms
