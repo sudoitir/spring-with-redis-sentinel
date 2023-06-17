@@ -7,7 +7,7 @@ spring:
       sentinel:
         master: mymaster
         nodes:
-          - highly-available-redis-example-redis-sentinel-1
-          - highly-available-redis-example-redis-sentinel-2
-          - highly-available-redis-example-redis-sentinel-3
+          - highly-available-redis-example-redis-sentinel-1:26379
+          - highly-available-redis-example-redis-sentinel-2:26380
+          - highly-available-redis-example-redis-sentinel-3:26381
       timeout: 600ms
